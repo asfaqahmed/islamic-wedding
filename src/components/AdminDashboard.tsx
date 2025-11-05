@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, MessageCircle, Camera, Mail, Download, Trash2, CheckCircle, FileText } from 'lucide-react';
+import { Users, MessageCircle, Camera, Download, Trash2, CheckCircle, FileText } from 'lucide-react';
 import { supabaseAdmin } from '../lib/supabase';
 import type { RSVP, Wish, Photo, CantMakeIt } from '../lib/supabase';
 import { format } from 'date-fns';
@@ -218,9 +218,7 @@ export default function AdminDashboard() {
   const attendingCount = rsvps.filter(r => r.will_attend).length;
   const notAttendingCount = rsvps.filter(r => !r.will_attend).length;
   const totalGuests = rsvps.filter(r => r.will_attend).reduce((sum, r) => sum + r.guest_count, 0);
-  const approvedWishes = wishes.filter(w => w.approved).length;
   const pendingWishes = wishes.filter(w => !w.approved).length;
-  const approvedPhotos = photos.filter(p => p.approved).length;
   const pendingPhotos = photos.filter(p => !p.approved).length;
 
   if (isLoading) {

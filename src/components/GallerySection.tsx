@@ -77,10 +77,8 @@ export default function GallerySection() {
         const filePath = `${fileName}`;
 
         // Upload to Supabase Storage
-        let uploadError: any = null;
-        let uploadData: any = null;
-
-        const { data, error } = await supabase.storage
+        // Try uploading first without upsert
+        let { error: uploadError } = await supabase.storage
           .from('photos')
           .upload(filePath, file, {
             cacheControl: '3600',
@@ -88,12 +86,9 @@ export default function GallerySection() {
             contentType: file.type
           });
 
-        uploadError = error;
-        uploadData = data;
-
         // Retry with upsert if needed
         if (uploadError) {
-          const { data: retryData, error: retryError } = await supabase.storage
+          const { error: retryError } = await supabase.storage
             .from('photos')
             .upload(filePath, file, {
               cacheControl: '3600',
@@ -102,7 +97,6 @@ export default function GallerySection() {
             });
 
           uploadError = retryError;
-          uploadData = retryData;
         }
 
         if (uploadError) throw uploadError;
@@ -144,8 +138,9 @@ export default function GallerySection() {
         setUploadProgress('');
       }, 5000);
 
-    } catch (error: any) {
-      setUploadError(error.message || 'Failed to upload photos. Please try again.');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upload photos. Please try again.';
+      setUploadError(errorMessage);
       setUploadProgress('');
     } finally {
       setIsUploading(false);
