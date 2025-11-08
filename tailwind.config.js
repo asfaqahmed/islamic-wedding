@@ -24,6 +24,7 @@ export default {
         'marquee': 'marquee 25s linear infinite',
         'fade-in': 'fadeIn 1s ease-in',
         'slide-up': 'slideUp 0.8s ease-out',
+        'spin-reverse': 'spinReverse 1s linear infinite',
       },
       keyframes: {
         marquee: {
@@ -37,6 +38,10 @@ export default {
         slideUp: {
           '0%': { transform: 'translateY(30px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        spinReverse: {
+          '0%': { transform: 'rotate(360deg)' },
+          '100%': { transform: 'rotate(0deg)' },
         },
       },
     },
