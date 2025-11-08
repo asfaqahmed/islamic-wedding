@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Camera, Upload, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
+import { Camera, Upload, CheckCircle2, AlertCircle, ExternalLink, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Photo } from '../lib/supabase';
 
@@ -13,6 +13,7 @@ export default function GallerySection() {
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
 
   // READ operation: Fetch photos from database
   useEffect(() => {
@@ -147,6 +148,64 @@ export default function GallerySection() {
     }
   };
 
+  // Download single photo
+  const downloadPhoto = async (photo: Photo) => {
+    try {
+      const response = await fetch(photo.url);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = photo.filename || `wedding-photo-${photo.id}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading photo:', error);
+      alert('Failed to download photo. Please try again.');
+    }
+  };
+
+  // Download all photos
+  const downloadAllPhotos = async () => {
+    if (photos.length === 0) {
+      alert('No photos to download');
+      return;
+    }
+
+    setIsDownloadingAll(true);
+
+    try {
+      for (let i = 0; i < photos.length; i++) {
+        const photo = photos[i];
+        try {
+          const response = await fetch(photo.url);
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = photo.filename || `wedding-photo-${i + 1}.jpg`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+
+          // Add small delay between downloads to avoid browser blocking
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (error) {
+          console.error(`Error downloading photo ${i + 1}:`, error);
+        }
+      }
+      alert(`Downloaded ${photos.length} photos successfully!`);
+    } catch (error) {
+      console.error('Error downloading all photos:', error);
+      alert('Some photos failed to download. Please try again.');
+    } finally {
+      setIsDownloadingAll(false);
+    }
+  };
+
   return (
     <section
       id="gallery"
@@ -166,14 +225,27 @@ export default function GallerySection() {
             Share your favorite moments from our special day
           </p>
 
-          {/* Upload Button */}
-          <button
-            onClick={() => setShowUploadForm(!showUploadForm)}
-            className="px-6 py-3 bg-gradient-to-r from-islamic-gold to-islamic-teal text-white font-english font-semibold rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 mx-auto"
-          >
-            <Upload size={20} />
-            {showUploadForm ? 'Cancel Upload' : 'Upload Photos'}
-          </button>
+          {/* Action Buttons */}
+          <div className="flex flex-wrap justify-center gap-4">
+            <button
+              onClick={() => setShowUploadForm(!showUploadForm)}
+              className="px-6 py-3 bg-gradient-to-r from-islamic-gold to-islamic-teal text-white font-english font-semibold rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
+            >
+              <Upload size={20} />
+              {showUploadForm ? 'Cancel Upload' : 'Upload Photos'}
+            </button>
+
+            {photos.length > 0 && (
+              <button
+                onClick={downloadAllPhotos}
+                disabled={isDownloadingAll}
+                className="px-6 py-3 bg-gradient-to-r from-islamic-emerald to-islamic-teal text-white font-english font-semibold rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50"
+              >
+                <Download size={20} />
+                {isDownloadingAll ? 'Downloading...' : `Download All (${photos.length})`}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Upload Form */}
@@ -292,15 +364,24 @@ export default function GallerySection() {
                   <p className="text-white font-english text-sm mb-2">
                     By: {photo.uploaded_by || 'Anonymous'}
                   </p>
-                  <a
-                    href={photo.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-white font-english text-sm hover:text-islamic-gold transition-colors"
-                  >
-                    <ExternalLink size={16} />
-                    View Full Size
-                  </a>
+                  <div className="flex gap-2">
+                    <a
+                      href={photo.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-white font-english text-sm hover:text-islamic-gold transition-colors"
+                    >
+                      <ExternalLink size={16} />
+                      View Full Size
+                    </a>
+                    <button
+                      onClick={() => downloadPhoto(photo)}
+                      className="ml-auto flex items-center gap-1 px-3 py-1 bg-islamic-gold text-white rounded hover:bg-islamic-gold/80 transition-colors text-sm font-english"
+                    >
+                      <Download size={16} />
+                      Download
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
